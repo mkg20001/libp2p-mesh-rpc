@@ -47,6 +47,12 @@ meshRPC({
   },
   protocol: '/p2p/my-rpc/1.0.0',
   config: {
-    autoDial: true // auto-dial all discovered peers
+    autoDial: true, // auto-dial all discovered peers
+    parallel: 1, // amount of parallel requests per client
+
+    roundRobin: { // roundRobin config
+      failureMax: 0,
+      successMax: 1
+    }
   }
 })
