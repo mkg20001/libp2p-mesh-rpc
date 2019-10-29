@@ -128,7 +128,7 @@ module.exports = (isClient, conn, rpcController) => {
             _rid = rid
             rid += 2
 
-            requests[rid] = { resolve, reject }
+            requests[_rid] = { resolve, reject }
 
             push.push({ rid: _rid, cmd: cmdID, data })
           })
