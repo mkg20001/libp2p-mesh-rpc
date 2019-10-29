@@ -112,6 +112,7 @@ module.exports = (isClient, conn, rpcController) => {
     },
     doRequest: async (cmdID, ...params) => {
       let cmd
+      let _rid
 
       try {
         cmd = rpcController.get(cmdID)
@@ -124,7 +125,7 @@ module.exports = (isClient, conn, rpcController) => {
           data = cmd.rpc.request.encode(data)
 
           const res = await new Promise((resolve, reject) => {
-            const _rid = rid
+            _rid = rid
             rid += 2
 
             requests[rid] = { resolve, reject }
@@ -132,10 +133,13 @@ module.exports = (isClient, conn, rpcController) => {
             push.push({ rid: _rid, cmd: cmdID, data })
           })
 
+          delete requests[rid]
+
           return cmd.rpc.result.decode(res)
         }, ...params)
       } catch (err) {
-        rpcController.errorFactory(cmd, peer, err)
+        delete requests[rid]
+        throw rpcController.errorFactory(cmd, peer, err)
       }
     }
   }
