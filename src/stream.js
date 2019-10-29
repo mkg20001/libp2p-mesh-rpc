@@ -12,7 +12,7 @@ const Pushable = require('it-pushable')
 const { map } = require('streaming-iterables')
 
 module.exports = (isClient, conn, rpcController) => {
-  const rid = isClient ? 0 : 1
+  let rid = isClient ? 0 : 1
 
   const requests = {}
   const push = Pushable()
@@ -56,7 +56,7 @@ module.exports = (isClient, conn, rpcController) => {
                 throw 500
               }
 
-              return { rid, data: res }
+              return { rid, cmd: CMD, data: res }
             }
           } else {
             throw 404
@@ -69,18 +69,10 @@ module.exports = (isClient, conn, rpcController) => {
               throw 500
             } else {
               if (error) {
-                req.reject(rpcController.errorFactory(cmd, peer, error))
+                req.reject(error)
                 return
               } else {
-                let res
-                try {
-                  res = cmd.rpc.result.decode(data)
-                } catch (err) {
-                  req.reject(rpcController.errorFactory(cmd, peer, err))
-                  return
-                }
-
-                req.resolve(res)
+                req.resolve(data)
                 return
               }
             }
@@ -88,11 +80,11 @@ module.exports = (isClient, conn, rpcController) => {
         }
       } catch (err) {
         if (typeof err === 'number') {
-          return { rid, error: err }
+          return { rid, cmd: CMD, error: err }
         } else if (err.code) {
-          return { rid, error: err.code }
+          return { rid, cmd: CMD, error: err.code }
         } else {
-          return { rid, error: Error.INTERNAL_SERVER_ERROR }
+          return { rid, cmd: CMD, error: Error.INTERNAL_SERVER_ERROR }
         }
       }
     }),
@@ -110,4 +102,41 @@ module.exports = (isClient, conn, rpcController) => {
     pb.encode(RPC),
     conn.sink
   )
+
+  return {
+    end: () => {
+
+    },
+    isConnected: () => {
+
+    },
+    doRequest: async (cmdID, ...params) => {
+      let cmd
+
+      try {
+        cmd = rpcController.get(cmdID)
+
+        if (!cmd.handler.client) {
+          throw 404
+        }
+
+        await cmd.handler.client(async (data) => { // everything in here will be caught
+          data = cmd.rpc.request.encode(data)
+
+          const res = await new Promise((resolve, reject) => {
+            const _rid = rid
+            rid += 2
+
+            requests[rid] = { resolve, reject }
+
+            push.push({ rid: _rid, cmd: cmdID, data })
+          })
+
+          return cmd.rpc.result.decode(res)
+        }, ...params)
+      } catch (err) {
+        rpcController.errorFactory(cmd, peer, err)
+      }
+    }
+  }
 }
