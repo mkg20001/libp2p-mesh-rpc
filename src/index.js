@@ -2,8 +2,9 @@
 
 const RPCControllerOuter = require('./rpcControllerOuter')
 const { schema } = require('./utils')
+const prom = (f) => new Promise((resolve, reject) => f((err, res) => err ? reject(err) : resolve(res)))
 
-module.exports = (_config) => {
+module.exports = async (_config) => {
   /* validate */
 
   const { error, value } = schema.validate(_config)
@@ -20,15 +21,16 @@ module.exports = (_config) => {
 
   /* code */
 
-  const { onConn, cmd, get: getPeer } = RPCControllerOuter(cmds, config, swarm.peerBook)
+  const { onConn, cmd, get: getPeer } = await RPCControllerOuter(cmds, config, swarm.peerBook, dial)
 
   async function dial (peerLike) {
-    const conn = await swarm.dial(peerLike, config.protocol)
-    await onConn(conn)
+    const conn = await prom(cb => swarm.dialProtocol(peerLike, config.protocol, cb))
+
+    await onConn(true, conn)
   }
 
   swarm.handle(config.protocol, async (_, conn) => {
-    await onConn(conn)
+    await onConn(false, conn)
   })
 
   if (config.autoDial) {

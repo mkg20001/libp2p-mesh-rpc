@@ -3,6 +3,7 @@
 /* eslint-env mocha */
 
 const { factory } = require('./utils')
+const prom = (f) => new Promise((resolve, reject) => f((err, res) => err ? reject(err) : resolve(res)))
 
 const addrs = [
   '/ip4/127.0.0.1/tcp/33221',
@@ -19,5 +20,9 @@ describe('mesh-rpc', () => {
 
   it('A should be able to ping B', async () => {
     await peers[0].mesh.cmd.PING.single(peers[1].node.p)
+  })
+
+  after(async () => {
+    await Promise.all(peers.map(p => p.node.stop()))
   })
 })

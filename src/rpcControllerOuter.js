@@ -10,7 +10,7 @@ const RPCController = require('./rpcController')
 const { parallelMap, collect } = require('streaming-iterables')
 const pipe = require('it-pipe')
 
-module.exports = async (cmds, config, peerBook) => {
+module.exports = async (cmds, config, peerBook, dial) => {
   const c = {}
 
   let peers = []
@@ -80,7 +80,7 @@ module.exports = async (cmds, config, peerBook) => {
 
         return res.filter(r => Boolean(r))
       },
-      single (peerLike, ...params) {
+      async single (peerLike, ...params) {
         updatePeers()
 
         const peer = peerBook.get(peerLike)
@@ -88,7 +88,8 @@ module.exports = async (cmds, config, peerBook) => {
         const rpc = peers.filter(p => p.id === id)[0]
 
         if (!rpc) {
-          throw new Error('Not connected. Call swarm.dial(peer) first')
+          await dial(peer)
+          return c[cmdId].single(peer, ...params)
         }
 
         return rpc.doRequest(cmdId, ...params)
@@ -101,14 +102,6 @@ module.exports = async (cmds, config, peerBook) => {
     cmd: c,
     get: (peerLike) => {
       updatePeers()
-
-      const peer = peerBook.get(peerLike)
-      const id = peer.id.toB58String()
-      const rpc = peers.filter(p => p.id === id)[0]
-
-      if (!rpc) {
-        throw new Error('Not connected. Call swarm.dial(peer) first')
-      }
 
       // TODO: add and maybe add .dial) ?
     }
