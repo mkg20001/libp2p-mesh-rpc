@@ -37,7 +37,7 @@ meshRPC({
           try {
             return { data: fs.readFileSync(req.fileName, req.encoding) }
           } catch (err) {
-            if (err.code === 'ENOEXIS') {
+            if (err.code === 'ENOEXIST') {
               return 404 // send 404
             } else {
               throw err // re-throw

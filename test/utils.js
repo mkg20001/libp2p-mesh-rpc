@@ -2,6 +2,7 @@
 
 const spawn = require('./node')
 const Mesh = require('..')
+const prom = (f) => new Promise((resolve, reject) => f((err, res) => err ? reject(err) : resolve(res)))
 
 const { Fetch, FetchRes, Void } = require('protons')(`
 
@@ -38,7 +39,7 @@ const defaultCmds = {
         try {
           return { data: fs.readFileSync(req.fileName, req.encoding) }
         } catch (err) {
-          if (err.code === 'ENOEXIS') {
+          if (err.code === 'ENOEXIST') {
             return 404 // send 404
           } else {
             throw err // re-throw
@@ -72,7 +73,7 @@ async function factory (listen, cmds, proto, config) {
     config: config || {},
     swarm: node
   })
-  await node.start()
+  await prom(cb => node.start(cb))
 
   return { node, mesh }
 }

@@ -16,8 +16,8 @@ module.exports = async (cmds, config, peerBook, dial) => {
   let peers = []
   const wrap = await RPCController(cmds)
 
-  async function onConn (conn) {
-    peers.push(await wrap(conn))
+  async function onConn (isClient, conn) {
+    peers.push(await wrap(isClient, conn))
   }
 
   function updatePeers () {

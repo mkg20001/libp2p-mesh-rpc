@@ -16,7 +16,8 @@ module.exports = async (_config) => {
   const {
     cmds,
     swarm,
-    config
+    config,
+    protocol
   } = value
 
   /* code */
@@ -24,12 +25,12 @@ module.exports = async (_config) => {
   const { onConn, cmd, get: getPeer } = await RPCControllerOuter(cmds, config, swarm.peerBook, dial)
 
   async function dial (peerLike) {
-    const conn = await prom(cb => swarm.dialProtocol(peerLike, config.protocol, cb))
+    const conn = await swarm.dialProtocol(peerLike, protocol)
 
     await onConn(true, conn)
   }
 
-  swarm.handle(config.protocol, async (_, conn) => {
+  swarm.handle(protocol, async (_, conn) => {
     await onConn(false, conn)
   })
 
