@@ -11,6 +11,11 @@ const pb = require('it-protocol-buffers')
 const Pushable = require('it-pushable')
 const { map } = require('streaming-iterables')
 
+// TODO: remove on upgrade to libp2p v2
+const toIterator = require('pull-stream-to-async-iterator')
+const toPull = require('async-iterator-to-pull-stream')
+const pull = require('pull-stream')
+
 module.exports = (isClient, conn, rpcController) => {
   let rid = isClient ? 0 : 1
 
@@ -20,7 +25,7 @@ module.exports = (isClient, conn, rpcController) => {
   const peer = null // TODO: add
 
   pipe(
-    conn.source,
+    toIterator(conn.source),
     pb.decode(RPC),
     map(async ({ rid, error, cmd: CMD, data }) => {
       const isEven = Boolean(rid % 2)
@@ -97,9 +102,13 @@ module.exports = (isClient, conn, rpcController) => {
     }
   )
 
-  pipe(
+  const sink = toPull.source(pipe(
     push,
-    pb.encode(RPC),
+    pb.encode(RPC)
+  ))
+
+  pull(
+    sink,
     conn.sink
   )
 

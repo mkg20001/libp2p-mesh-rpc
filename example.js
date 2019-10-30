@@ -3,7 +3,7 @@
 const meshRPC = require('libp2p-mesh-rpc')
 const fs = require('fs')
 
-const { Fetch, FetchRes } = require('protons')(`
+const { Fetch, FetchRes, Void } = require('protons')(`
 
 message Fetch {
   string fileName = 1;
@@ -13,6 +13,8 @@ message Fetch {
 message FetchRes {
   bytes data = 1;
 }
+
+message Void { }
 
 `)
 
@@ -31,7 +33,7 @@ meshRPC({
           const res = await send({ fileName, encoding: encodingRead }) // send the request (will be auto-encoded)
           return res.data.toString(encodingRes)
         },
-        async server (req) { // return number here to be treated as error (will be sent to client)
+        server (req) { // return number here to be treated as error (will be sent to client)
           try {
             return { data: fs.readFileSync(req.fileName, req.encoding) }
           } catch (err) {
@@ -41,6 +43,21 @@ meshRPC({
               throw err // re-throw
             }
           }
+        }
+      }
+    },
+    PING: {
+      errors: {},
+      rpc: {
+        request: Void,
+        response: Void
+      },
+      handler: {
+        client (send) {
+          return send({})
+        },
+        server () {
+          return {}
         }
       }
     }
