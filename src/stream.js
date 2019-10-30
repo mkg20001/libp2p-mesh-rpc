@@ -107,8 +107,8 @@ module.exports = (isClient, conn, rpcController) => {
     end: () => {
 
     },
-    isConnected: () => {
-
+    isConnected: () => { // TODO: add
+      return true
     },
     doRequest: async (cmdID, ...params) => {
       let cmd

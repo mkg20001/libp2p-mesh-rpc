@@ -3,6 +3,7 @@
 /* eslint-disable no-throw-literal */
 
 const { Error } = require('./proto')
+const Stream = require('./stream')
 
 const ErrorMSG = {
   [Error.BAD_REQUEST]: 'Bad request! The protocol buffers data seems wrongly encoded!',
@@ -18,8 +19,8 @@ module.exports = (cmds) => {
         throw 404
       }
     },
-    wrap: (isClient, conn) => {
-
+    wrap: async (isClient, conn) => {
+      return Stream(isClient, conn, C)
     },
     errorFactory: (cmd, peer, err) => {
       let e

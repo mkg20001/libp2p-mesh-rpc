@@ -11,7 +11,7 @@ const { schema } = require('./utils')
 const { parallelMap, collect } = require('streaming-iterables')
 const pipe = require('it-pipe')
 
-module.exports = async (cmds, swarm, config) => {
+module.exports = async (cmds, config) => {
   const { error, value } = schema.validate(config)
 
   if (error) {
@@ -25,14 +25,9 @@ module.exports = async (cmds, swarm, config) => {
   const peers = []
   const wrap = await RPCController(cmds)
 
-  async function dial (peerLike) {
-    const conn = await swarm.dial(peerLike, config.protocol)
+  async function onConn (conn) {
     peers.push(await wrap(conn))
   }
-
-  swarm.handle(config.protocol, async (_, conn) => {
-    peers.push(await wrap(conn))
-  })
 
   for (const cmdId in cmds) { // eslint-disable-line guard-for-in
     c[cmdId] = {
@@ -92,8 +87,8 @@ module.exports = async (cmds, swarm, config) => {
   }
 
   return {
+    onConn,
     cmd: c,
-    dial,
     get // (peerLike) => peerWithCmds
   }
 }
