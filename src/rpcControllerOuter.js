@@ -41,7 +41,7 @@ module.exports = async (cmds, config, peerBook, dial) => {
         const pc = Math.round(peers.length * percentage)
         const pl = shuffle(peers).slice(0, pc)
 
-        log('broadcast %s to %o peers (%=%o, p=%o)', cmdId, pl.length, percentage, parallel)
+        log('broadcast %o to %o peer(s) (%=%o, p=%o)', cmdId, pl.length, percentage, parallel)
 
         const res = await pipe(
           parallelMap(parallel, async (peer) => {
@@ -67,7 +67,7 @@ module.exports = async (cmds, config, peerBook, dial) => {
         const pc = Math.round(peers.length * percentage)
         const pl = shuffle(peers).slice(0, pc)
 
-        log('multicast %s to %o peers (%=%o, p=%o) limits success %o, failure %o', cmdId, pl.length, percentage, parallel, successMax, failureMax)
+        log('multicast %o to %o peer(s) (%=%o, p=%o) limits success %o, failure %o', cmdId, pl.length, percentage, parallel, successMax, failureMax)
 
         const success = 0
         const failure = 0
@@ -105,7 +105,7 @@ module.exports = async (cmds, config, peerBook, dial) => {
           return c[cmdId].single(peer, ...params)
         }
 
-        log('single request %s on %s', cmdId, peer.id.toB58String())
+        log('single request %o to %o', cmdId, peer.id.toB58String())
 
         return rpc.doRequest(cmdId, ...params)
       }

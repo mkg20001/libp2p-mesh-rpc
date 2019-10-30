@@ -39,7 +39,7 @@ module.exports = async (isClient, conn, rpcController) => {
       const isEven = Boolean(rid % 2)
       const isReq = (!isEven && isClient) || (isEven && !isClient)
 
-      log('got rpc  src=%o  isClient=%o  rid=%o\treq=%o\tcmd=%o\terror=%o\tdata=%o', id, isClient, rid, isReq, CMD, error, data && data.length)
+      log('got rpc  src=%o(%s)  rid=%o#%s\tcmd=%o\terror=%o\tdata=%o', id, isClient ? 'c' : 's', rid, isReq ? 'req' : 'res', CMD, error, data && data.length)
 
       try {
         const cmd = rpcController.get(CMD)
