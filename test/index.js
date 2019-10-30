@@ -23,6 +23,6 @@ describe('mesh-rpc', () => {
   })
 
   after(async () => {
-    await Promise.all(peers.map(p => p.node.stop()))
+    peers.map(p => prom(cb => p.node.stop(cb))) // TODO: await prom
   })
 })

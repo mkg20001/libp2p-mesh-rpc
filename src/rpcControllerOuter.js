@@ -10,6 +10,9 @@ const RPCController = require('./rpcController')
 const { parallelMap, collect } = require('streaming-iterables')
 const pipe = require('it-pipe')
 
+const debug = require('debug')
+const log = debug('libp2p:mesh-rpc:controller-outer')
+
 module.exports = async (cmds, config, peerBook, dial) => {
   const c = {}
 
@@ -17,14 +20,17 @@ module.exports = async (cmds, config, peerBook, dial) => {
   const wrap = await RPCController(cmds)
 
   async function onConn (isClient, conn) {
+    log('wrapping connection (isClient=%o)', isClient)
     peers.push(await wrap(isClient, conn))
   }
 
   function updatePeers () {
+    log('updating peers')
     peers = peers.filter(p => p.isConnected())
   }
 
   for (const cmdId in cmds) { // eslint-disable-line guard-for-in
+    log('registering %s', cmdId)
     c[cmdId] = {
       async broadcast (_config, ...params) {
         updatePeers()
@@ -32,6 +38,8 @@ module.exports = async (cmds, config, peerBook, dial) => {
         const { percentage = 1, parallel = 1 } = Object.assign(Object.assign({}, config), _config)
         const pc = Math.round(peers.length * percentage)
         const pl = shuffle(peers).slice(0, pc)
+
+        log('broadcast %s to %o peers (%=%o, p=%o)', cmdId, pl.length, percentage, parallel)
 
         const res = await pipe(
           parallelMap(parallel, async (peer) => {
@@ -56,6 +64,8 @@ module.exports = async (cmds, config, peerBook, dial) => {
 
         const pc = Math.round(peers.length * percentage)
         const pl = shuffle(peers).slice(0, pc)
+
+        log('multicast %s to %o peers (%=%o, p=%o) limits success %o, failure %o', cmdId, pl.length, percentage, parallel, successMax, failureMax)
 
         const success = 0
         const failure = 0
@@ -88,9 +98,12 @@ module.exports = async (cmds, config, peerBook, dial) => {
         const rpc = peers.filter(p => p.id === id)[0]
 
         if (!rpc) {
+          log('single dial %s', peer.id.toB58String())
           await dial(peer)
           return c[cmdId].single(peer, ...params)
         }
+
+        log('single request %s on %s', cmdId, peer.id.toB58String())
 
         return rpc.doRequest(cmdId, ...params)
       }

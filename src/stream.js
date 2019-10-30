@@ -14,22 +14,32 @@ const { map } = require('streaming-iterables')
 // TODO: remove on upgrade to libp2p v2
 const toIterator = require('pull-stream-to-async-iterator')
 const toPull = require('async-iterator-to-pull-stream')
+const toBuffer = require('it-buffer')
 const pull = require('pull-stream')
+const prom = (f) => new Promise((resolve, reject) => f((err, res) => err ? reject(err) : resolve(res)))
 
-module.exports = (isClient, conn, rpcController) => {
-  let rid = isClient ? 0 : 1
+const debug = require('debug')
+const log = debug('libp2p:mesh-rpc:controller-inner')
+
+module.exports = async (isClient, conn, rpcController) => {
+  let rid = isClient ? 1 : 0
 
   const requests = {}
   const push = Pushable()
 
-  const peer = null // TODO: add
+  const peer = await prom(cb => conn.getPeerInfo(cb))
+  const id = peer.id.toB58String()
+
+  log('wrapping %s', id)
 
   pipe(
     toIterator(conn.source),
     pb.decode(RPC),
     map(async ({ rid, error, cmd: CMD, data }) => {
       const isEven = Boolean(rid % 2)
-      const isReq = (!isEven && isClient) && (isEven && !isClient)
+      const isReq = (!isEven && isClient) || (isEven && !isClient)
+
+      log('got rpc  src=%o  isClient=%o  rid=%o\treq=%o\tcmd=%o\terror=%o\tdata=%o', id, isClient, rid, isReq, CMD, error, data && data.length)
 
       try {
         const cmd = rpcController.get(CMD)
@@ -104,7 +114,8 @@ module.exports = (isClient, conn, rpcController) => {
 
   const sink = toPull.source(pipe(
     push,
-    pb.encode(RPC)
+    pb.encode(RPC),
+    toBuffer
   ))
 
   pull(
@@ -113,6 +124,7 @@ module.exports = (isClient, conn, rpcController) => {
   )
 
   return {
+    id,
     end: () => {
 
     },
