@@ -1,6 +1,6 @@
 {
   "name": "libp2p-mesh-rpc",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Mesh RPC is a component that automatically handles distributing protobuf requests among a swarm of peers using a certain protocol",
   "main": "src/index.js",
   "scripts": {
