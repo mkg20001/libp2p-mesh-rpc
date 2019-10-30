@@ -4,7 +4,7 @@ const Joi = require('@hapi/joi')
 
 module.exports = {
   schema: Joi.object({
-    cmds: Joi.object().pattern(/[A-Z0-9_]+/, Joi.object({
+    cmds: Joi.object().pattern(/[A-Z0-9a-z_]+/, Joi.object({
       errors: Joi.object().pattern(/\d+/, Joi.string().required()).required(),
       rpc: Joi.object({
         request: Joi.object({
