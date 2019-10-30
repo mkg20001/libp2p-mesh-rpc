@@ -29,7 +29,7 @@ module.exports = async (_config) => {
 
   const { onConn, cmd, get: getPeer } = await RPCControllerOuter(cmds, config, swarm.peerBook, dial)
 
-  async function dial (peerLike) {
+  async function dial (peerLike) { // TODO: handle race dial
     log('starting dial %s', peerLike)
     const conn = await swarm.dialProtocol(peerLike, protocol)
 

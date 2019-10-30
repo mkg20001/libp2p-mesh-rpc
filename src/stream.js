@@ -60,7 +60,7 @@ module.exports = async (isClient, conn, rpcController) => {
               let res
 
               try {
-                res = await cmd.handler.server(req)
+                res = await cmd.handler.server(peer, req)
               } catch (err) {
                 throw 900
               }
@@ -142,7 +142,7 @@ module.exports = async (isClient, conn, rpcController) => {
           throw 404
         }
 
-        await cmd.handler.client(async (data) => { // everything in here will be caught
+        return await cmd.handler.client(peer, async (data) => { // everything in here will be caught
           data = cmd.rpc.request.encode(data)
 
           const res = await new Promise((resolve, reject) => {

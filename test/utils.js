@@ -4,7 +4,7 @@ const spawn = require('./node')
 const Mesh = require('..')
 const prom = (f) => new Promise((resolve, reject) => f((err, res) => err ? reject(err) : resolve(res)))
 
-const { Fetch, FetchRes, Void } = require('protons')(`
+const { Fetch, FetchRes, Void, Greeting } = require('protons')(`
 
 message Fetch {
   string fileName = 1;
@@ -16,6 +16,10 @@ message FetchRes {
 }
 
 message Void { }
+
+message Greeting {
+  string greeting = 1;
+}
 
 `)
 
@@ -31,11 +35,11 @@ const defaultCmds = {
       response: FetchRes
     },
     handler: {
-      async client (send, fileName, encodingRead, encodingRes) { // return number here to be treated as error (will throw on client)
+      async client (peer, send, fileName, encodingRead, encodingRes) { // return number here to be treated as error (will throw on client)
         const res = await send({ fileName, encoding: encodingRead }) // send the request (will be auto-encoded)
         return res.data.toString(encodingRes)
       },
-      server (req) { // return number here to be treated as error (will be sent to client)
+      server (peer, req) { // return number here to be treated as error (will be sent to client)
         try {
           return { data: fs.readFileSync(req.fileName, req.encoding) }
         } catch (err) {
@@ -55,11 +59,28 @@ const defaultCmds = {
       response: Void
     },
     handler: {
-      client (send) {
+      client (peer, send) {
         return send({})
       },
-      server () {
+      server (peer) {
         return {}
+      }
+    }
+  },
+  HELLO: {
+    errors: {},
+    rpc: {
+      request: Greeting,
+      response: Greeting
+    },
+    handler: {
+      async client (peer, send) {
+        const res = await send({ greeting: `Hello ${peer.id.toB58String()}` })
+
+        return res.greeting
+      },
+      server (peer) {
+        return { greeting: `Hello ${peer.id.toB58String()}` }
       }
     }
   }

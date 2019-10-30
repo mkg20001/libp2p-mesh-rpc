@@ -26,7 +26,9 @@ module.exports = async (cmds, config, peerBook, dial) => {
 
   function updatePeers () {
     log('updating peers')
-    peers = peers.filter(p => p.isConnected())
+    // TODO: better handle duplicate connections
+    const _uniq = {}
+    peers = peers.filter(p => p.isConnected() && !_uniq[p.id] && (_uniq[p.id] = true))
   }
 
   for (const cmdId in cmds) { // eslint-disable-line guard-for-in
@@ -47,10 +49,10 @@ module.exports = async (cmds, config, peerBook, dial) => {
             try {
               res = await peer.doRequest(cmdId, ...params)
             } catch (err) {
-              return { type: 'e', isErr: true, peer, err }
+              return { type: 'e', isErr: true, peer: peer.id, err }
             }
 
-            return { type: 'r', isRes: true, peer, res }
+            return { type: 'r', isRes: true, peer: peer.id, res }
           }, pl),
           collect
         )

@@ -17,8 +17,8 @@ module.exports = {
         }).options({ stripUnknown: true }).required()
       }).required(),
       handler: Joi.object({
-        client: Joi.function().minArity(1),
-        server: Joi.function()
+        client: Joi.function().minArity(2),
+        server: Joi.function().minArity(1)
       }).required()
     })).required(),
     protocol: Joi.string().required(),
