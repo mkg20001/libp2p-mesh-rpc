@@ -8,17 +8,17 @@ module.exports = {
       errors: Joi.object().pattern(/\d+/, Joi.string().required()).required(),
       rpc: Joi.object({
         request: Joi.object({
-          decode: Joi.function().arity(1).required(),
-          encode: Joi.function().arity(1).required()
-        }).required(),
-        result: Joi.object({
-          decode: Joi.function().arity(1).required(),
-          encode: Joi.function().arity(1).required()
-        }).required()
+          decode: Joi.function().minArity(1).required(),
+          encode: Joi.function().minArity(1).required()
+        }).options({ stripUnknown: true }).required(),
+        response: Joi.object({
+          decode: Joi.function().minArity(1).required(),
+          encode: Joi.function().minArity(1).required()
+        }).options({ stripUnknown: true }).required()
       }).required(),
       handler: Joi.object({
         client: Joi.function().minArity(1),
-        server: Joi.function().minArity(1)
+        server: Joi.function()
       }).required()
     })).required(),
     protocol: Joi.string().required(),
@@ -35,6 +35,7 @@ module.exports = {
         percentage: Joi.number().min(0).max(1).default(1),
         parallel: Joi.number().integer().min(0).max(1024).default(1)
       }).default({ percentage: 1 })
-    }).required()
+    }).required(),
+    swarm: Joi.any().required() // TODO: define type libp2p
   })
 }

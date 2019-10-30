@@ -56,7 +56,7 @@ module.exports = (isClient, conn, rpcController) => {
               }
 
               try {
-                res = await cmd.rpc.result.encode(res)
+                res = await cmd.rpc.response.encode(res)
               } catch (err) {
                 throw 500
               }
@@ -144,7 +144,7 @@ module.exports = (isClient, conn, rpcController) => {
 
           delete requests[rid]
 
-          return cmd.rpc.result.decode(res)
+          return cmd.rpc.response.decode(res)
         }, ...params)
       } catch (err) {
         delete requests[rid]

@@ -3,7 +3,7 @@
 const spawn = require('./node')
 const Mesh = require('..')
 
-const { Fetch, FetchRes } = require('protons')(`
+const { Fetch, FetchRes, Void } = require('protons')(`
 
 message Fetch {
   string fileName = 1;
@@ -13,6 +13,8 @@ message Fetch {
 message FetchRes {
   bytes data = 1;
 }
+
+message Void { }
 
 `)
 
@@ -25,14 +27,14 @@ const defaultCmds = {
     },
     rpc: {
       request: Fetch,
-      result: FetchRes
+      response: FetchRes
     },
     handler: {
       async client (send, fileName, encodingRead, encodingRes) { // return number here to be treated as error (will throw on client)
         const res = await send({ fileName, encoding: encodingRead }) // send the request (will be auto-encoded)
         return res.data.toString(encodingRes)
       },
-      async server (req) { // return number here to be treated as error (will be sent to client)
+      server (req) { // return number here to be treated as error (will be sent to client)
         try {
           return { data: fs.readFileSync(req.fileName, req.encoding) }
         } catch (err) {
@@ -44,6 +46,21 @@ const defaultCmds = {
         }
       }
     }
+  },
+  PING: {
+    errors: {},
+    rpc: {
+      request: Void,
+      response: Void
+    },
+    handler: {
+      client (send) {
+        return send({})
+      },
+      server () {
+        return {}
+      }
+    }
   }
 }
 
@@ -52,7 +69,8 @@ async function factory (listen, cmds, proto, config) {
   const mesh = await Mesh({
     cmds: cmds || defaultCmds,
     protocol: proto || '/p2p/mesh-rpc-test/1.0.0',
-    config: config || {}
+    config: config || {},
+    swarm: node
   })
   await node.start()
 

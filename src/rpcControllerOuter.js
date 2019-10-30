@@ -6,32 +6,29 @@
 
 const shuffle = require('lodash/shuffle')
 const RPCController = require('./rpcController')
-const { schema } = require('./utils')
 
 const { parallelMap, collect } = require('streaming-iterables')
 const pipe = require('it-pipe')
 
-module.exports = async (cmds, config) => {
-  const { error, value } = schema.validate(config)
-
-  if (error) {
-    throw error
-  }
-
-  config = value
-
+module.exports = async (cmds, config, peerBook) => {
   const c = {}
 
-  const peers = []
+  let peers = []
   const wrap = await RPCController(cmds)
 
   async function onConn (conn) {
     peers.push(await wrap(conn))
   }
 
+  function updatePeers () {
+    peers = peers.filter(p => p.isConnected())
+  }
+
   for (const cmdId in cmds) { // eslint-disable-line guard-for-in
     c[cmdId] = {
       async broadcast (_config, ...params) {
+        updatePeers()
+
         const { percentage = 1, parallel = 1 } = Object.assign(Object.assign({}, config), _config)
         const pc = Math.round(peers.length * percentage)
         const pl = shuffle(peers).slice(0, pc)
@@ -53,6 +50,8 @@ module.exports = async (cmds, config) => {
         return res.filter(r => Boolean(r))
       },
       async multicast (_config, ...params) { // NOTE: if parallel is more than one, there could be more success/failure than the max, since requests were already in progress at that time
+        updatePeers()
+
         const { successMax = 1, failureMax = 0, parallel = 1, percentage = 1 } = Object.assign(Object.assign({}, config), _config)
 
         const pc = Math.round(peers.length * percentage)
@@ -81,7 +80,18 @@ module.exports = async (cmds, config) => {
 
         return res.filter(r => Boolean(r))
       },
-      async single (peerLike, ...params) {
+      single (peerLike, ...params) {
+        updatePeers()
+
+        const peer = peerBook.get(peerLike)
+        const id = peer.id.toB58String()
+        const rpc = peers.filter(p => p.id === id)[0]
+
+        if (!rpc) {
+          throw new Error('Not connected. Call swarm.dial(peer) first')
+        }
+
+        return rpc.doRequest(cmdId, ...params)
       }
     }
   }
@@ -89,6 +99,18 @@ module.exports = async (cmds, config) => {
   return {
     onConn,
     cmd: c,
-    get // (peerLike) => peerWithCmds
+    get: (peerLike) => {
+      updatePeers()
+
+      const peer = peerBook.get(peerLike)
+      const id = peer.id.toB58String()
+      const rpc = peers.filter(p => p.id === id)[0]
+
+      if (!rpc) {
+        throw new Error('Not connected. Call swarm.dial(peer) first')
+      }
+
+      // TODO: add and maybe add .dial) ?
+    }
   }
 }

@@ -26,7 +26,7 @@ meshRPC({
       },
       rpc: {
         request: Fetch,
-        result: FetchRes
+        response: FetchRes
       },
       handler: {
         async client (send, fileName, encodingRead, encodingRes) { // return number here to be treated as error (will throw on client)

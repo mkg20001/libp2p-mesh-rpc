@@ -55,4 +55,6 @@ module.exports = async (listen) => {
   const node = new Libp2p(options)
   node.p = peerInfo
   node.a = peerInfo.multiaddrs.toArray()[0]
+
+  return node
 }
