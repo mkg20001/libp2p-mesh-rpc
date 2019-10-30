@@ -4,7 +4,7 @@
 
 /* eslint-disable no-loop-func */
 
-const shuffle = require('loadsh/shuffle')
+const shuffle = require('lodash/shuffle')
 const RPCController = require('./rpcController')
 const { schema } = require('./utils')
 
